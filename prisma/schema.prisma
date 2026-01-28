@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Fase eliminatoria después de grupos
+enum KnockoutFormat {
+  NONE         // Solo fase de grupos, sin eliminatoria
+  SINGLE_KO    // KO directo - eliminación directa
+  DOUBLE_KO    // Doble KO - con repesca
+}
+
+// Modalidades del torneo
+enum TournamentModality {
+  STATIC    // Parado
+  MOVEMENT  // Movimiento
+  COMBINED  // Combinado
+}
+
+// Estado del torneo
+enum TournamentStatus {
+  DRAFT       // Borrador
+  OPEN        // Inscripciones abiertas
+  IN_PROGRESS // En curso
+  FINISHED    // Finalizado
+  CANCELLED   // Cancelado
+}
+
+// Estado de un partido
+enum MatchStatus {
+  PENDING     // Pendiente
+  IN_PROGRESS // En curso
+  FINISHED    // Finalizado
+  CANCELLED   // Cancelado
+}
+
+// Usuario
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  alias         String    @unique
+  profilePhoto  Bytes?    // Foto de perfil guardada en la base de datos
+  photoMimeType String?   // Tipo MIME de la foto (image/jpeg, image/png, etc.)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  teamsAsPlayer1     Team[]       @relation("Player1")
+  teamsAsPlayer2     Team[]       @relation("Player2")
+  tournamentsCreated Tournament[] @relation("Creator")
+
+  @@map("users")
+}
+
+// Mesa de futbolín
+model Table {
+  id          String   @id @default(cuid())
+  name        String
+  location    String?
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  matches          Match[]
+  tournamentTables TournamentTable[]
+
+  @@map("tables")
+}
+
+// Pareja (equipo de 2 jugadores)
+model Team {
+  id        String   @id @default(cuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Jugadores
+  player1Id String
+  player2Id String
+  player1   User   @relation("Player1", fields: [player1Id], references: [id])
+  player2   User   @relation("Player2", fields: [player2Id], references: [id])
+
+  // Relaciones
+  tournamentTeams TournamentTeam[]
+  matchesAsTeam1  Match[]          @relation("Team1")
+  matchesAsTeam2  Match[]          @relation("Team2")
+  matchesWon      Match[]          @relation("Winner")
+
+  @@map("teams")
+}
+
+// Torneo
+model Tournament {
+  id              String             @id @default(cuid())
+  name            String
+  description     String             // Descripción obligatoria
+  modality        TournamentModality
+  status          TournamentStatus   @default(DRAFT)
+
+  // Formato del torneo
+  hasGroupStage   Boolean            @default(false)  // Tiene fase de grupos?
+  knockoutFormat  KnockoutFormat     @default(SINGLE_KO) // Formato eliminatoria tras grupos
+  teamsPerGroup   Int?               // Equipos por grupo (si hay fase de grupos)
+  teamsAdvancing  Int?               // Equipos que avanzan de cada grupo
+
+  // Límite de equipos (opcional)
+  maxTeams        Int?
+
+  // Ubicación para Google Maps
+  locationName    String?            // Nombre del lugar
+  locationAddress String?            // Dirección completa
+  latitude        Float?             // Coordenada latitud
+  longitude       Float?             // Coordenada longitud
+
+  // Foto del torneo
+  photo           Bytes?
+  photoMimeType   String?
+
+  // Fechas
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Usuario creador
+  creatorId       String
+  creator         User               @relation("Creator", fields: [creatorId], references: [id])
+
+  // Relaciones
+  teams  TournamentTeam[]
+  tables TournamentTable[]
+  rounds Round[]
+  groups Group[]
+
+  @@map("tournaments")
+}
+
+// Relación Torneo-Equipo
+model TournamentTeam {
+  id           String   @id @default(cuid())
+  tournamentId String
+  teamId       String
+  seedNumber   Int?     // Número de cabeza de serie
+  isEliminated Boolean  @default(false)
+  isInLosersBracket Boolean @default(false) // Para doble KO
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+  @@map("tournament_teams")
+}
+
+// Relación Torneo-Mesa
+model TournamentTable {
+  id           String   @id @default(cuid())
+  tournamentId String
+  tableId      String
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  table      Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, tableId])
+  @@map("tournament_tables")
+}
+
+// Ronda del torneo
+model Round {
+  id           String   @id @default(cuid())
+  tournamentId String
+  roundNumber  Int
+  name         String?  // Ej: "Octavos", "Cuartos", "Semifinal", "Final"
+  isLosersBracket Boolean @default(false) // Para doble KO
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matches    Match[]
+
+  @@unique([tournamentId, roundNumber, isLosersBracket])
+  @@map("rounds")
+}
+
+// Partido
+model Match {
+  id          String      @id @default(cuid())
+  roundId     String
+  tableId     String?
+  team1Id     String?
+  team2Id     String?
+  winnerId    String?
+  team1Score  Int?
+  team2Score  Int?
+  status      MatchStatus @default(PENDING)
+  matchNumber Int         // Número del partido en la ronda
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  round  Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  table  Table? @relation(fields: [tableId], references: [id])
+  team1  Team?  @relation("Team1", fields: [team1Id], references: [id])
+  team2  Team?  @relation("Team2", fields: [team2Id], references: [id])
+  winner Team?  @relation("Winner", fields: [winnerId], references: [id])
+
+  @@map("matches")
+}
+
+// Grupos (para fase de grupos)
+model Group {
+  id           String   @id @default(cuid())
+  tournamentId String
+  name         String   // Ej: "Grupo A", "Grupo B"
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  groupTeams GroupTeam[]
+
+  @@map("groups")
+}
+
+// Relación Grupo-Equipo con estadísticas
+model GroupTeam {
+  id           String @id @default(cuid())
+  groupId      String
+  teamId       String
+  matchesPlayed Int   @default(0)
+  wins         Int    @default(0)
+  draws        Int    @default(0)
+  losses       Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+  points       Int    @default(0)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, teamId])
+  @@map("group_teams")
+}
