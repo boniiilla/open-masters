@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         firstName: true,
         lastName: true,
         alias: true,
+        role: true,
         profilePhoto: true,
         photoMimeType: true,
         createdAt: true,

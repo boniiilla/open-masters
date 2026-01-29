@@ -1,5 +1,7 @@
 import 'next-auth'
 
+export type UserRole = 'PLAYER' | 'ADMIN' | 'SUPERADMIN'
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -9,6 +11,7 @@ declare module 'next-auth' {
       alias: string
       firstName: string
       lastName: string
+      role: UserRole
     }
   }
 
@@ -19,6 +22,7 @@ declare module 'next-auth' {
     alias: string
     firstName: string
     lastName: string
+    role: UserRole
   }
 }
 
@@ -28,5 +32,6 @@ declare module 'next-auth/jwt' {
     alias: string
     firstName: string
     lastName: string
+    role: UserRole
   }
 }

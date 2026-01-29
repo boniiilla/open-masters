@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
           alias: user.alias,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role as 'PLAYER' | 'ADMIN' | 'SUPERADMIN',
         }
       },
     }),
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
         token.alias = (user as any).alias || ''
         token.firstName = (user as any).firstName || ''
         token.lastName = (user as any).lastName || ''
+        token.role = (user as any).role || 'PLAYER'
       }
       return token
     },
@@ -64,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         session.user.alias = token.alias as string
         session.user.firstName = (token as any).firstName as string
         session.user.lastName = (token as any).lastName as string
+        session.user.role = token.role as 'PLAYER' | 'ADMIN' | 'SUPERADMIN'
       }
       return session
     },

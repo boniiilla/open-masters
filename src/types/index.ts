@@ -1,4 +1,5 @@
 // Tipos de enums
+export type UserRole = 'PLAYER' | 'ADMIN' | 'SUPERADMIN'
 export type KnockoutFormat = 'NONE' | 'SINGLE_KO' | 'DOUBLE_KO'
 export type TournamentModality = 'STATIC' | 'MOVEMENT' | 'COMBINED'
 export type TournamentStatus = 'DRAFT' | 'OPEN' | 'IN_PROGRESS' | 'FINISHED' | 'CANCELLED'
@@ -67,6 +68,12 @@ export interface LoginInput {
 export interface RegisterInput extends CreateUserInput {}
 
 // Labels para mostrar en UI
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  PLAYER: 'Jugador',
+  ADMIN: 'Administrador',
+  SUPERADMIN: 'Super Administrador',
+}
+
 export const KNOCKOUT_FORMAT_LABELS: Record<KnockoutFormat, string> = {
   NONE: 'Sin eliminatoria',
   SINGLE_KO: 'KO Directo',

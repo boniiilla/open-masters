@@ -17,8 +17,8 @@ const config: Config = {
           elevated: '#252525',
         },
         primary: {
-          DEFAULT: '#00D9D9',
-          dark: '#00CED1',
+          DEFAULT: '#2A32EB',
+          dark: '#5B61EF',
         },
         text: {
           primary: '#FFFFFF',
@@ -29,7 +29,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['SF Pro Display', 'Roboto', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       fontSize: {
         'xs': '11px',

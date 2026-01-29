@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Roles de usuario
+enum UserRole {
+  PLAYER      // Jugador normal
+  ADMIN       // Administrador de torneos
+  SUPERADMIN  // Super administrador
+}
+
 // Fase eliminatoria después de grupos
 enum KnockoutFormat {
   NONE         // Solo fase de grupos, sin eliminatoria
@@ -46,6 +53,7 @@ model User {
   firstName     String
   lastName      String
   alias         String    @unique
+  role          UserRole  @default(PLAYER)
   profilePhoto  Bytes?    // Foto de perfil guardada en la base de datos
   photoMimeType String?   // Tipo MIME de la foto (image/jpeg, image/png, etc.)
   createdAt     DateTime  @default(now())

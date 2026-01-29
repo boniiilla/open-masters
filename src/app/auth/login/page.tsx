@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-normal text-[var(--text-primary)] mb-2">
+          <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">
             Open Masters
           </h1>
           <p className="text-[var(--text-secondary)]">
@@ -48,53 +48,51 @@ export default function LoginPage() {
         </div>
 
         {/* Card Container */}
-        <div className="bg-[var(--surface)] rounded-3xl overflow-hidden">
-          {/* Header */}
-          <div className="app-modal-header">
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-elevated)] transition-colors"
-            >
-              Volver
-            </Link>
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">
-              Iniciar Sesión
-            </h2>
-            <button
-              type="submit"
-              form="login-form"
-              disabled={loading}
-              className="px-6 py-2 rounded-full bg-[var(--primary)] text-black font-semibold hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </div>
-
-          {/* Body */}
-          <form id="login-form" onSubmit={handleSubmit} className="app-modal-body">
+        <div className="bg-[var(--surface)] rounded-3xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-4 rounded-full bg-red-500/10 text-red-400 text-sm border-2 border-red-500/20 text-center">
                 {error}
               </div>
             )}
 
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              className="app-input"
-              placeholder="Email"
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                autoComplete="email"
+                className="app-input"
+                placeholder="tu@email.com"
+              />
+            </div>
 
-            <input
-              type="password"
-              name="password"
-              required
-              autoComplete="current-password"
-              className="app-input"
-              placeholder="Contraseña"
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                autoComplete="current-password"
+                className="app-input"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="app-btn-primary w-full text-center py-3 disabled:opacity-50"
+            >
+              {loading ? 'Entrando...' : 'Iniciar Sesión'}
+            </button>
           </form>
         </div>
 
