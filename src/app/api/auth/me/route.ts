@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { updateUserSchema } from '@/lib/validations';
+import { bufferToBase64, parseBase64Image } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -24,6 +25,7 @@ export async function GET() {
         lastName: true,
         alias: true,
         profilePhoto: true,
+        photoMimeType: true,
         createdAt: true,
       },
     });
@@ -35,12 +37,12 @@ export async function GET() {
       );
     }
 
-    // Convert profilePhoto buffer to base64 if exists
     const userData = {
       ...user,
-      profilePhoto: user.profilePhoto
-        ? `data:image/jpeg;base64,${user.profilePhoto.toString('base64')}`
+      profilePhoto: user.profilePhoto && user.photoMimeType
+        ? bufferToBase64(user.profilePhoto, user.photoMimeType)
         : null,
+      photoMimeType: undefined,
     };
 
     return NextResponse.json({
@@ -96,18 +98,19 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Parse profilePhoto if it's a base64 string
-    let photoBuffer = undefined;
+    let photoData: { profilePhoto?: Buffer; photoMimeType?: string } = {};
     if (profilePhoto) {
-      const base64Data = profilePhoto.replace(/^data:image\/\w+;base64,/, '');
-      photoBuffer = Buffer.from(base64Data, 'base64');
+      const parsed = parseBase64Image(profilePhoto);
+      if (parsed) {
+        photoData = { profilePhoto: parsed.buffer, photoMimeType: parsed.mimeType };
+      }
     }
 
     const updateData: any = {};
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
     if (alias !== undefined) updateData.alias = alias;
-    if (photoBuffer !== undefined) updateData.profilePhoto = photoBuffer;
+    Object.assign(updateData, photoData);
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
@@ -119,16 +122,17 @@ export async function PUT(request: NextRequest) {
         lastName: true,
         alias: true,
         profilePhoto: true,
+        photoMimeType: true,
         createdAt: true,
       },
     });
 
-    // Convert profilePhoto buffer to base64
     const userData = {
       ...updatedUser,
-      profilePhoto: updatedUser.profilePhoto
-        ? `data:image/jpeg;base64,${updatedUser.profilePhoto.toString('base64')}`
+      profilePhoto: updatedUser.profilePhoto && updatedUser.photoMimeType
+        ? bufferToBase64(updatedUser.profilePhoto, updatedUser.photoMimeType)
         : null,
+      photoMimeType: undefined,
     };
 
     return NextResponse.json({

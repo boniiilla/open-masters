@@ -31,7 +31,7 @@ interface Tournament {
 }
 
 export default function MyTournamentsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [filteredTournaments, setFilteredTournaments] = useState<Tournament[]>([])
@@ -44,6 +44,7 @@ export default function MyTournamentsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   useEffect(() => {
+    if (status === 'loading') return
     if (!session) {
       router.push('/auth/login')
       return
@@ -53,7 +54,7 @@ export default function MyTournamentsPage() {
       return
     }
     fetchMyTournaments()
-  }, [session])
+  }, [session, status])
 
   useEffect(() => {
     let filtered = tournaments
@@ -149,8 +150,16 @@ export default function MyTournamentsPage() {
     }
   }
 
-  if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
-    return null
+  if (status === 'loading' || !session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPERADMIN')) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

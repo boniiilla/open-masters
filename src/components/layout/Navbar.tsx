@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { LogoHorizontal, LogoVertical } from '@/components/Logo'
 
 export function Navbar() {
   const { data: session, status } = useSession()
@@ -12,7 +13,6 @@ export function Navbar() {
 
   useEffect(() => {
     if (session?.user) {
-      // Fetch full user data including profile photo
       fetch('/api/auth/me')
         .then(res => res.json())
         .then(data => {
@@ -23,6 +23,8 @@ export function Navbar() {
         .catch(err => console.error('Error fetching user data:', err))
     }
   }, [session])
+
+  if (pathname?.startsWith('/auth')) return null
 
   // Obtener el rol del usuario
   const userRole = session?.user?.role || 'PLAYER'
@@ -115,11 +117,9 @@ export function Navbar() {
       {/* ===== DESKTOP SIDEBAR ===== */}
       <aside className="hidden md:flex app-sidebar">
         {/* Logo */}
-        <div className="p-6 border-b border-[var(--surface-elevated)]">
-          <Link href="/" className="flex items-center group">
-            <span className="text-2xl font-normal text-[var(--text-primary)]">
-              Open Masters
-            </span>
+        <div className="px-2 py-2 border-b border-[var(--surface-elevated)]">
+          <Link href="/">
+            <LogoHorizontal height={100} />
           </Link>
         </div>
 
@@ -148,10 +148,9 @@ export function Navbar() {
         <div className="p-4 border-t border-[var(--surface-elevated)]">
           {status === 'loading' ? (
             <div className="h-12 bg-[var(--surface-elevated)] rounded-xl animate-pulse" />
-          ) : session && userData ? (
+          ) : session ? (
             <Link href="/settings" className="flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--surface-elevated)] transition-colors">
-              {/* Profile Photo or Avatar */}
-              {userData.profilePhoto ? (
+              {userData?.profilePhoto ? (
                 <img
                   src={userData.profilePhoto}
                   alt={userData.alias}
@@ -160,13 +159,14 @@ export function Navbar() {
               ) : (
                 <div className="w-12 h-12 rounded-full bg-[var(--primary)] flex items-center justify-center">
                   <span className="text-lg font-bold text-white">
-                    {userData.firstName?.[0]}{userData.lastName?.[0]}
+                    {(userData?.firstName?.[0] || session.user?.firstName?.[0] || '?')}
+                    {(userData?.lastName?.[0] || session.user?.lastName?.[0] || '')}
                   </span>
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-base font-semibold text-[var(--text-primary)] truncate">
-                  {userData.alias || `${userData.firstName} ${userData.lastName}`}
+                  {userData?.alias || session.user?.alias || `${session.user?.firstName || ''} ${session.user?.lastName || ''}`.trim()}
                 </p>
                 <p className="text-xs text-[var(--text-secondary)]">Ver perfil</p>
               </div>
@@ -189,15 +189,13 @@ export function Navbar() {
         <div className="flex items-center justify-between px-5 pt-8 pb-2">
           {/* Left: Logo */}
           <Link href="/">
-            <h1 className="text-xl font-normal text-[var(--text-primary)]">
-              Open Masters
-            </h1>
+            <LogoHorizontal height={62} />
           </Link>
 
           {/* Right: User Avatar */}
-          {session && userData ? (
+          {session ? (
             <Link href="/settings">
-              {userData.profilePhoto ? (
+              {userData?.profilePhoto ? (
                 <img
                   src={userData.profilePhoto}
                   alt={userData.alias}
@@ -206,7 +204,8 @@ export function Navbar() {
               ) : (
                 <div className="w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center">
                   <span className="text-sm font-bold text-white">
-                    {userData.firstName?.[0]}{userData.lastName?.[0]}
+                    {(userData?.firstName?.[0] || session.user?.firstName?.[0] || '?')}
+                    {(userData?.lastName?.[0] || session.user?.lastName?.[0] || '')}
                   </span>
                 </div>
               )}
@@ -236,14 +235,13 @@ export function Navbar() {
 
       {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
       <nav className="md:hidden app-bottom-nav">
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const active = isActive(item.href)
-          const isMiddle = item.label === 'Mi Player'
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`${isMiddle ? 'app-bottom-nav-icon-center' : (active ? 'app-bottom-nav-icon-active' : 'app-bottom-nav-icon-inactive')}`}
+              className={active ? 'app-bottom-nav-icon-center' : 'app-bottom-nav-icon-inactive'}
             >
               <span className={active ? 'text-white' : 'text-[var(--text-secondary)]'}>
                 {item.icon(active)}
@@ -253,8 +251,8 @@ export function Navbar() {
         })}
       </nav>
 
-      {/* Spacer for mobile header */}
-      <div className="md:hidden h-24" />
+      {/* Spacer for mobile header — must match actual header height */}
+      <div className="md:hidden h-36" />
     </>
   )
 }

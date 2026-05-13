@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Avatar from '@/components/Avatar'
 
 interface User {
   id: string
@@ -13,8 +14,8 @@ interface User {
   createdAt: string
 }
 
-export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function UserDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -23,49 +24,69 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   }, [id])
 
   async function fetchUser() {
-    const response = await fetch(`/api/users/${id}`)
-    const data = await response.json()
-    if (data.success) {
-      setUser(data.data)
+    try {
+      const response = await fetch(`/api/users/${id}`)
+      const data = await response.json()
+      if (data.success) {
+        setUser(data.data)
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (loading) {
-    return <div className="text-center py-8">Cargando...</div>
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    )
   }
 
   if (!user) {
-    return <div className="text-center py-8">Usuario no encontrado</div>
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-5">
+        <p className="text-[var(--text-secondary)]">Usuario no encontrado</p>
+        <Link href="/admin/users" className="px-6 py-2 rounded-full bg-[var(--primary)] text-white font-semibold text-sm">
+          Volver
+        </Link>
+      </div>
+    )
   }
 
   return (
-    <div>
-      <Link href="/users" className="text-primary-600 hover:text-primary-500 text-sm mb-4 inline-block">
-        &larr; Volver a jugadores
-      </Link>
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in px-5 md:px-0">
+      <div className="pt-4 flex items-center gap-3">
+        <Link href="/admin/users" className="w-9 h-9 rounded-full bg-[var(--surface-elevated)] flex items-center justify-center hover:bg-[var(--primary)]/20 transition-colors">
+          <svg className="w-4 h-4 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
+        <h1 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)]">Jugador</h1>
+      </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {user.profilePhoto ? (
-              <img src={user.profilePhoto} alt={user.alias} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-3xl font-bold text-gray-400">
-                {user.firstName[0]}{user.lastName[0]}
-              </span>
-            )}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.alias}</h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              {user.firstName} {user.lastName}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user.email}</p>
-            <p className="text-xs text-gray-400 mt-2">
-              Miembro desde {new Date(user.createdAt).toLocaleDateString('es-ES')}
-            </p>
-          </div>
+      <div className="app-card rounded-3xl p-6 flex items-center gap-5">
+        <Avatar
+          firstName={user.firstName}
+          lastName={user.lastName}
+          alias={user.alias}
+          profilePhoto={user.profilePhoto}
+          size="lg"
+          className="w-20 h-20"
+        />
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] truncate">{user.alias}</h2>
+          <p className="text-[var(--text-secondary)] truncate">{user.firstName} {user.lastName}</p>
+          <p className="text-sm text-[var(--text-secondary)] truncate mt-1">{user.email}</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-2">
+            Miembro desde {new Date(user.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
         </div>
       </div>
     </div>

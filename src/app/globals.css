@@ -41,6 +41,23 @@
   --radius-xl: 20px;
   --radius-2xl: 24px;
   --radius-full: 9999px;
+
+  /* Semantic / status */
+  --success: #4ade80;
+  --success-bg: rgba(34, 197, 94, 0.20);
+  --info: #c084fc;
+  --info-bg: rgba(168, 85, 247, 0.20);
+  --modality: #60a5fa;
+  --modality-bg: rgba(59, 130, 246, 0.20);
+  --danger: #f87171;
+  --danger-bg: rgba(239, 68, 68, 0.10);
+  --danger-ring: rgba(239, 68, 68, 0.20);
+
+  /* Extended surfaces */
+  --bg-deep: #0a0a0a;
+  --border-subtle: #2a2a2a;
+  --primary-soft: rgba(42, 50, 235, 0.10);
+  --primary-ring: rgba(42, 50, 235, 0.20);
 }
 
 * {
@@ -110,8 +127,9 @@ input, select, textarea {
   /* ===== SEARCH BAR ===== */
   .app-search {
     @apply flex flex-row items-center;
-    @apply bg-[var(--surface)] rounded-md px-4 h-9;
+    @apply bg-[var(--surface)] rounded-full px-4 h-10;
     @apply mx-5 mb-2;
+    border: 2px solid var(--surface-elevated);
   }
 
   .app-search input {
@@ -409,6 +427,23 @@ input, select, textarea {
 
   .app-card-elevated {
     @apply bg-[var(--surface-elevated)] rounded-lg p-4;
+  }
+
+  /* ===== AUTH INPUT ===== */
+  .auth-input {
+    @apply w-full px-5 py-3 rounded-full;
+    background: #0f0f0f;
+    border: 2px solid #252525;
+    @apply text-[var(--text-primary)] placeholder:text-[#555];
+    @apply focus:outline-none;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  .auth-input:focus {
+    border-color: #2A32EB;
   }
 
   /* ===== INPUT ===== */

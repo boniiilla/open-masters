@@ -19,7 +19,7 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
@@ -28,6 +28,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all')
 
   useEffect(() => {
+    if (status === 'loading') return
     if (!session) {
       router.push('/auth/login')
       return
@@ -37,7 +38,7 @@ export default function AdminUsersPage() {
       return
     }
     fetchUsers()
-  }, [session])
+  }, [session, status])
 
   useEffect(() => {
     let filtered = users
@@ -68,8 +69,16 @@ export default function AdminUsersPage() {
     setLoading(false)
   }
 
-  if (!session || session.user.role !== 'SUPERADMIN') {
-    return null
+  if (status === 'loading' || !session || session.user.role !== 'SUPERADMIN') {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

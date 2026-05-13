@@ -119,7 +119,7 @@ export default function SettingsPage() {
     await signOut({ callbackUrl: '/auth/login' });
   };
 
-  if (loading || !userData) {
+  if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex items-center gap-3">
@@ -127,6 +127,20 @@ export default function SettingsPage() {
           <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
           <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <p className="text-[var(--text-secondary)]">Error al cargar el perfil</p>
+        <button
+          onClick={fetchUserData}
+          className="px-6 py-2 rounded-full bg-[var(--primary)] text-white font-semibold text-sm"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }
