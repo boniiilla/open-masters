@@ -6,7 +6,7 @@ import { MainWrapper } from '@/components/MainWrapper'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
-  title: 'Open Masters - Gestión de Torneos de Futbolín',
+  title: 'Open Masters',
   description: 'Aplicación para gestionar torneos de futbolín con diferentes modos de juego',
   manifest: '/manifest.json',
   appleWebApp: {

@@ -15,6 +15,7 @@ export const updateUserSchema = z.object({
   lastName: z.string().min(1, 'El apellido es requerido').optional(),
   alias: z.string().min(2, 'El alias debe tener al menos 2 caracteres').optional(),
   profilePhoto: z.string().optional(),
+  role: z.enum(['PLAYER', 'ADMIN', 'SUPERADMIN']).optional(),
 })
 
 export const changePasswordSchema = z.object({

@@ -8,68 +8,55 @@ import { USER_ROLE_LABELS, UserRole } from '@/types'
 import Avatar from '@/components/Avatar'
 
 interface User {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  alias: string
-  role: UserRole
-  profilePhoto: string | null
-  createdAt: string
+  id: string; email: string; firstName: string; lastName: string
+  alias: string; role: UserRole; profilePhoto: string | null; createdAt: string
 }
+
+function Icon({ d, size = 16, sw = 1.8, color }: { d: string | string[]; size?: number; sw?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color || 'currentColor'} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+    </svg>
+  )
+}
+
+const ROLE_CFG: Record<string, { bg: string; color: string }> = {
+  SUPERADMIN: { bg: 'rgba(255,80,80,.15)',    color: '#ff6060' },
+  ADMIN:      { bg: 'rgba(59,91,255,.15)',    color: '#7090ff' },
+  PLAYER:     { bg: 'rgba(50,210,120,.13)',   color: '#46d68a' },
+}
+
+const ROLE_TABS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'PLAYER', label: 'Players' },
+  { value: 'ADMIN', label: 'Admins' },
+  { value: 'SUPERADMIN', label: 'Super Admins' },
+]
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [q, setQ] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session) {
-      router.push('/auth/login')
-      return
-    }
-    if (session.user.role !== 'SUPERADMIN') {
-      router.push('/')
-      return
-    }
+    if (!session) { router.push('/auth/login'); return }
+    if (session.user.role !== 'SUPERADMIN') { router.push('/'); return }
     fetchUsers()
   }, [session, status])
-
-  useEffect(() => {
-    let filtered = users
-
-    if (searchQuery) {
-      filtered = filtered.filter(u =>
-        u.alias.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.lastName.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(u => u.role === roleFilter)
-    }
-
-    setFilteredUsers(filtered)
-  }, [users, searchQuery, roleFilter])
 
   async function fetchUsers() {
     const response = await fetch('/api/users')
     const data = await response.json()
-    if (data.success) {
-      setUsers(data.data)
-      setFilteredUsers(data.data)
-    }
+    if (data.success) setUsers(data.data)
     setLoading(false)
   }
 
-  if (status === 'loading' || !session || session.user.role !== 'SUPERADMIN') {
+  if (status === 'loading' || !session || session.user.role !== 'SUPERADMIN' || loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex items-center gap-3">
@@ -81,190 +68,100 @@ export default function AdminUsersPage() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-3 h-3 bg-[var(--primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-        </div>
-      </div>
-    )
-  }
+  const filtered = users.filter(u =>
+    (roleFilter === 'all' || u.role === roleFilter) &&
+    (!q ||
+      u.alias.toLowerCase().includes(q.toLowerCase()) ||
+      u.email.toLowerCase().includes(q.toLowerCase()) ||
+      u.firstName.toLowerCase().includes(q.toLowerCase()) ||
+      u.lastName.toLowerCase().includes(q.toLowerCase()))
+  )
 
   const totalAdmins = users.filter(u => u.role === 'ADMIN' || u.role === 'SUPERADMIN').length
   const totalPlayers = users.filter(u => u.role === 'PLAYER').length
 
   return (
-    <div className="space-y-8 animate-fade-in px-5 md:px-0">
-      {/* Header */}
-      <section className="pt-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)]">
-              Gestión de Usuarios
-            </h1>
-            <p className="text-[var(--text-secondary)] mt-2">
-              Administra todos los usuarios de la plataforma
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-4">
-            <div className="app-card p-5 text-center min-w-[80px] rounded-full">
-              <p className="text-2xl font-bold gradient-text">{users.length}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Total</p>
-            </div>
-            <div className="app-card p-5 text-center min-w-[80px] rounded-full">
-              <p className="text-2xl font-bold gradient-text">{totalPlayers}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Players</p>
-            </div>
-            <div className="app-card p-5 text-center min-w-[80px] rounded-full">
-              <p className="text-2xl font-bold gradient-text">{totalAdmins}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Admins</p>
-            </div>
-          </div>
+    <div className="animate-fade-in px-5 md:px-0" style={{ paddingBottom: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, paddingTop: 8, gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-.025em', color: '#fff', lineHeight: 1 }}>Usuarios</h1>
+          <p style={{ fontSize: 13, color: '#666688', marginTop: 5 }}>Administra todos los usuarios de la plataforma</p>
         </div>
-      </section>
-
-      {/* Search & Filters */}
-      <section className="space-y-4">
-        <div className="relative">
-          <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar usuarios..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="app-input pl-12"
-          />
-        </div>
-
-        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
-          {[
-            { value: 'all', label: 'Todos' },
-            { value: 'PLAYER', label: 'Players' },
-            { value: 'ADMIN', label: 'Admins' },
-            { value: 'SUPERADMIN', label: 'Super Admins' },
-          ].map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setRoleFilter(filter.value)}
-              className={roleFilter === filter.value ? 'app-pill-active' : 'app-pill-inactive'}
-            >
-              {filter.label}
-            </button>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          {[{ v: users.length, l: 'Total' }, { v: totalPlayers, l: 'Players' }, { v: totalAdmins, l: 'Admins' }].map(({ v, l }) => (
+            <div key={l} style={{ background: '#10101a', border: '1px solid #1a1a2a', borderRadius: 14, padding: '10px 14px', textAlign: 'center', minWidth: 54 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#7090ff' }}>{v}</div>
+              <div style={{ fontSize: 10, color: '#555575', marginTop: 2 }}>{l}</div>
+            </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Users Grid */}
-      <section>
-        {filteredUsers.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto rounded-full bg-[var(--surface-elevated)] flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <p className="text-[var(--text-secondary)]">
-              {searchQuery || roleFilter !== 'all' ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredUsers.map((user) => (
-              <Link
-                key={user.id}
-                href={`/users/${user.id}`}
-                className="app-card group hover:bg-[var(--surface-elevated)] transition-all cursor-pointer overflow-hidden rounded-3xl p-6"
+      <div style={{ position: 'relative', marginBottom: 18 }}>
+        <span style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#44446a', pointerEvents: 'none' }}>
+          <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" size={16} sw={2} />
+        </span>
+        <input
+          type="text" placeholder="Buscar usuarios..." value={q}
+          onChange={e => setQ(e.target.value)}
+          style={{
+            width: '100%', height: 44, background: '#111118', border: '1px solid #1e1e2e',
+            borderRadius: 9999, padding: '0 16px 0 43px', fontFamily: 'inherit',
+            fontSize: 13.5, color: '#e0e0f0', outline: 'none',
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: 7, marginBottom: 22, flexWrap: 'wrap' }}>
+        {ROLE_TABS.map(t => (
+          <button key={t.value} onClick={() => setRoleFilter(t.value)} style={{
+            padding: '6px 16px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 13, fontWeight: 500,
+            background: roleFilter === t.value ? '#3b5bff' : 'transparent',
+            color: roleFilter === t.value ? '#fff' : '#666688',
+            boxShadow: roleFilter === t.value ? '0 4px 14px rgba(59,91,255,.38)' : 'none',
+            transition: 'all 140ms',
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: 12, color: '#444460', textAlign: 'center' }}>
+          <Icon d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2','M9 3a4 4 0 100 8 4 4 0 000-8z','M23 21v-2a4 4 0 00-3-3.87','M16 3.13a4 4 0 010 7.75']} size={44} sw={1} color="#333348" />
+          <p style={{ fontSize: 15 }}>
+            {q || roleFilter !== 'all' ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 10 }}>
+          {filtered.map(user => {
+            const rcfg = ROLE_CFG[user.role] || ROLE_CFG.PLAYER
+            return (
+              <Link key={user.id} href={`/users/${user.id}`} style={{
+                background: '#10101a', border: '1px solid #1a1a2a', borderRadius: 16,
+                padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13,
+                textDecoration: 'none', cursor: 'pointer',
+                transition: 'border-color 170ms,box-shadow 170ms,transform 170ms',
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.cssText += ';border-color:#2e2e48;box-shadow:0 8px 28px rgba(0,0,0,.45);transform:translateY(-2px)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.cssText += ';border-color:#1a1a2a;box-shadow:none;transform:translateY(0)' }}
               >
-                <div className="flex items-center gap-4">
-                  {/* Avatar */}
-                  <div className="relative">
-                    <Avatar
-                      firstName={user.firstName}
-                      lastName={user.lastName}
-                      alias={user.alias}
-                      size="lg"
-                      className="w-16 h-16"
-                    />
-                    {/* Role Badge */}
-                    <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
-                      user.role === 'SUPERADMIN' ? 'bg-red-500' :
-                      user.role === 'ADMIN' ? 'bg-[var(--primary)]' :
-                      'bg-green-500'
-                    }`}>
-                      {user.role === 'SUPERADMIN' ? (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                        </svg>
-                      ) : user.role === 'ADMIN' ? (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-                        </svg>
-                      ) : (
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* User Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-all truncate">
-                      {user.alias}
-                    </h3>
-                    <p className="text-sm text-[var(--text-secondary)] truncate">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        user.role === 'SUPERADMIN' ? 'bg-red-500/20 text-red-400' :
-                        user.role === 'ADMIN' ? 'bg-[var(--primary)]/20 text-[var(--primary)]' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
-                        {USER_ROLE_LABELS[user.role]}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Arrow */}
-                  <svg className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                <Avatar firstName={user.firstName} lastName={user.lastName} alias={user.alias} size="md" className="w-11 h-11 flex-shrink-0" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.alias}</div>
+                  <div style={{ fontSize: 12, color: '#666688', marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.firstName} {user.lastName}</div>
+                  <span style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 9px', borderRadius: 9999, background: rcfg.bg, color: rcfg.color }}>
+                    {USER_ROLE_LABELS[user.role]}
+                  </span>
                 </div>
-
-                {/* Additional Info */}
-                <div className="mt-4 pt-4 border-t border-[var(--surface-elevated)]">
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span className="truncate">{user.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>
-                      Registrado {new Date(user.createdAt).toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </span>
-                  </div>
-                </div>
+                <Icon d="M9 18l6-6-6-6" size={15} sw={2} color="#44446a" />
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

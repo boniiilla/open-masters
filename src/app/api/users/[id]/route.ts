@@ -18,6 +18,7 @@ export async function GET(
         firstName: true,
         lastName: true,
         alias: true,
+        role: true,
         profilePhoto: true,
         photoMimeType: true,
         createdAt: true,
@@ -79,7 +80,7 @@ export async function PUT(
       )
     }
 
-    const { firstName, lastName, alias, profilePhoto } = validation.data
+    const { firstName, lastName, alias, profilePhoto, role } = validation.data
 
     // Verificar si el alias ya existe (si se está actualizando)
     if (alias) {
@@ -112,6 +113,7 @@ export async function PUT(
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
         ...(alias && { alias }),
+        ...(role && { role }),
         ...photoData,
       },
       select: {
@@ -120,6 +122,7 @@ export async function PUT(
         firstName: true,
         lastName: true,
         alias: true,
+        role: true,
         createdAt: true,
       },
     })
